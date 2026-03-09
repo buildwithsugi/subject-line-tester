@@ -148,6 +148,10 @@ export default function SubjectLineTester() {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState("");
   const [copied, setCopied] = useState(null);
+  const [showForm, setShowForm] = useState(false);
+  const [formData, setFormData] = useState({ name: "", email: "", phone: "", jobRole: "" });
+  const [formSubmitted, setFormSubmitted] = useState(false);
+  const [formLoading, setFormLoading] = useState(false);
   const debounceRef = useRef(null);
 
   useEffect(() => {
@@ -174,7 +178,31 @@ export default function SubjectLineTester() {
     navigator.clipboard.writeText(text);
     setCopied(id); setTimeout(() => setCopied(null), 1800);
   };
-
+  const handleFormSubmit = async () => {
+  if (!formData.name || !formData.email) return;
+  setFormLoading(true);
+  try {
+    await fetch("https://script.google.com/macros/s/AKfycbzpj__kSWdx4esZDxcFdKEj_wkUSO8WslG9EL8Dr_mQpIC4cMykB_Dh3A98udCxYho2/exec", {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        jobRole: formData.jobRole,
+        subjectLine: input,
+        score: analysis?.score
+      })
+    });
+    setFormSubmitted(true);
+    setShowForm(false);
+    handleGetSuggestions();
+  } catch(e) {
+    console.error(e);
+  }
+  setFormLoading(false);
+};
   return (
     <div style={{
       minHeight:"100vh", background:"#0C0E1A",
@@ -304,7 +332,7 @@ export default function SubjectLineTester() {
             )}
 
             {!aiResult && (
-              <button onClick={handleGetSuggestions} disabled={aiLoading}
+              <button onClick={() => !formSubmitted ? setShowForm(true) : handleGetSuggestions()}
                 style={{
                   width:"100%", padding:"16px", borderRadius:12,
                   background: aiLoading ? "#131525" : "linear-gradient(135deg, #2A3F8F, #4F6EF7)",
@@ -357,8 +385,63 @@ export default function SubjectLineTester() {
             )}
           </>
         )}
+        {showForm && (
+  <div style={{
+    position:"fixed", inset:0, background:"rgba(0,0,0,0.8)",
+    display:"flex", alignItems:"center", justifyContent:"center",
+    zIndex:1000, padding:20
+  }}>
+    <div style={{
+      background:"#10131F", border:"1px solid #2A3060",
+      borderRadius:20, padding:36, width:"100%", maxWidth:460
+    }}>
+      <div style={{ fontSize:11, color:"#4F6EF7", fontFamily:"monospace", letterSpacing:2, marginBottom:8 }}>ONE LAST STEP</div>
+      <h2 style={{ margin:"0 0 8px", fontSize:24, fontWeight:700, color:"#fff" }}>Get Your AI Rewrites</h2>
+      <p style={{ margin:"0 0 24px", fontSize:14, color:"#4A5575" }}>Enter your details to unlock Claude-powered suggestions</p>
 
-        {!input && (
+      {[
+        { label:"Full Name *", key:"name", placeholder:"Sugavanesh M", type:"text" },
+        { label:"Work Email *", key:"email", placeholder:"sugi@company.com", type:"email" },
+        { label:"Phone Number", key:"phone", placeholder:"+91 98765 43210", type:"tel" },
+        { label:"Job Role", key:"jobRole", placeholder:"Marketing Manager", type:"text" }
+      ].map(field => (
+        <div key={field.key} style={{ marginBottom:16 }}>
+          <label style={{ display:"block", fontSize:12, color:"#6B7A99", marginBottom:6, fontFamily:"monospace" }}>{field.label}</label>
+          <input
+            type={field.type}
+            placeholder={field.placeholder}
+            value={formData[field.key]}
+            onChange={e => setFormData(prev => ({ ...prev, [field.key]: e.target.value }))}
+            style={{
+              width:"100%", background:"#080A14", border:"1px solid #2A3060",
+              borderRadius:10, padding:"12px 16px", color:"#E8ECF8",
+              fontSize:14, fontFamily:"system-ui, sans-serif", outline:"none",
+              boxSizing:"border-box"
+            }}
+          />
+        </div>
+      ))}
+      <div style={{ display:"flex", gap:12, marginTop:24 }}>
+        <button onClick={() => setShowForm(false)}
+          style={{ flex:1, padding:"12px", borderRadius:10, border:"1px solid #2A3060",
+            background:"transparent", color:"#4A5575", fontSize:14, cursor:"pointer" }}>
+          Cancel
+        </button>
+        <button onClick={handleFormSubmit} disabled={formLoading || !formData.name || !formData.email}
+          style={{ flex:2, padding:"12px", borderRadius:10, border:"none",
+            background: formLoading || !formData.name || !formData.email ? "#1A2456" : "linear-gradient(135deg, #2A3F8F, #4F6EF7)",
+            color: formLoading || !formData.name || !formData.email ? "#4A5575" : "#fff",
+            fontSize:14, fontWeight:600, cursor: formLoading ? "default" : "pointer" }}>
+          {formLoading ? "Saving..." : "Unlock AI Rewrites →"}
+        </button>
+      </div>
+      <p style={{ margin:"16px 0 0", fontSize:11, color:"#2A3060", textAlign:"center" }}>
+        🔒 Your details are stored securely. No spam, ever.
+      </p>
+    </div>
+  </div>
+)}
+      {!input && (
           <div style={{ textAlign:"center", padding:"48px 0", color:"#1E2235" }}>
             <div style={{ fontSize:48, marginBottom:16 }}>✉</div>
             <div style={{ fontSize:14, fontFamily:"monospace" }}>Start typing to see your score</div>
