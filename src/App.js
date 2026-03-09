@@ -94,7 +94,7 @@ Respond ONLY with valid JSON in this exact format, no markdown, no extra text:
   ],
   "topTip": "one key piece of advice for this specific subject line"
 }`;
-const res = await fetch("http://localhost:3001/api/suggest", {
+const res = await fetch("https://subject-line-tester.onrender.com/api/suggest", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
